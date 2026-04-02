@@ -7,31 +7,26 @@ using Reg.ru DNS for domain validation.
 
 ## How it works
 
-```
-Let's Encrypt                         cert-manager
-     │                                     │
-     │  "prove you own *.dolotin.ru"       │
-     │ ──────────────────────────────────► │
-     │                                     │
-     │                          ┌──────────┴──────────┐
-     │                          │  webhook-regru pod   │
-     │                          │                      │
-     │                          │  Present():          │
-     │                          │  Reg.ru API          │
-     │                          │  → zone/add_txt      │
-     │                          │  _acme-challenge.    │
-     │                          │  dolotin.ru = <token> │
-     │                          └──────────┬──────────┘
-     │                                     │
-     │  verify TXT record                  │
-     │ ◄───────────────────────────────── │
-     │                                     │
-     │  ✅ certificate issued              │
-     │ ──────────────────────────────────► │
-     │                                     │
-     │                          CleanUp(): │
-     │                          → zone/    │
-     │                          remove_record
+```mermaid
+sequenceDiagram
+    participant LE as Let's Encrypt
+    participant CM as cert-manager
+    participant WH as webhook-regru pod
+    participant API as Reg.ru API
+
+    CM->>LE: Request certificate for *.dolotin.ru
+    LE->>CM: Prove ownership (DNS-01 challenge)
+    CM->>WH: Present(challenge)
+    WH->>API: zone/add_txt<br/>_acme-challenge.dolotin.ru = token
+    API-->>WH: OK
+    WH-->>CM: OK
+    LE->>LE: Verify TXT record
+    LE->>CM: Certificate issued ✅
+    CM->>WH: CleanUp(challenge)
+    WH->>API: zone/remove_record<br/>_acme-challenge.dolotin.ru
+    API-->>WH: OK
+    WH-->>CM: OK
+    CM->>CM: Store certificate in Secret
 ```
 
 ## Prerequisites
