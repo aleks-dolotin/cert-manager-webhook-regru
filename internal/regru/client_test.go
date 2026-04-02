@@ -15,19 +15,25 @@ func TestCreateTXT_Success(t *testing.T) {
 		if err := r.ParseForm(); err != nil {
 			t.Fatal(err)
 		}
-		if r.FormValue("username") != "testuser" {
-			t.Errorf("username = %q", r.FormValue("username"))
+
+		var inputData map[string]interface{}
+		if err := json.Unmarshal([]byte(r.FormValue("input_data")), &inputData); err != nil {
+			t.Fatalf("parsing input_data: %v", err)
 		}
-		if r.FormValue("subdomain") != "_acme-challenge" {
-			t.Errorf("subdomain = %q", r.FormValue("subdomain"))
+
+		if inputData["username"] != "testuser" {
+			t.Errorf("username = %v", inputData["username"])
 		}
-		if r.FormValue("text") != "challenge-token-123" {
-			t.Errorf("text = %q", r.FormValue("text"))
+		if inputData["subdomain"] != "_acme-challenge" {
+			t.Errorf("subdomain = %v", inputData["subdomain"])
+		}
+		if inputData["text"] != "challenge-token-123" {
+			t.Errorf("text = %v", inputData["text"])
 		}
 
 		resp := apiResponse{Result: "success"}
 		w.Header().Set("Content-Type", "application/json")
-		json.NewEncoder(w).Encode(resp)
+		_ = json.NewEncoder(w).Encode(resp)
 	}))
 	defer srv.Close()
 
@@ -48,16 +54,22 @@ func TestDeleteTXT_Success(t *testing.T) {
 		if err := r.ParseForm(); err != nil {
 			t.Fatal(err)
 		}
-		if r.FormValue("record_type") != "TXT" {
-			t.Errorf("record_type = %q", r.FormValue("record_type"))
+
+		var inputData map[string]interface{}
+		if err := json.Unmarshal([]byte(r.FormValue("input_data")), &inputData); err != nil {
+			t.Fatalf("parsing input_data: %v", err)
 		}
-		if r.FormValue("content") != "challenge-token-123" {
-			t.Errorf("content = %q", r.FormValue("content"))
+
+		if inputData["record_type"] != "TXT" {
+			t.Errorf("record_type = %v", inputData["record_type"])
+		}
+		if inputData["content"] != "challenge-token-123" {
+			t.Errorf("content = %v", inputData["content"])
 		}
 
 		resp := apiResponse{Result: "success"}
 		w.Header().Set("Content-Type", "application/json")
-		json.NewEncoder(w).Encode(resp)
+		_ = json.NewEncoder(w).Encode(resp)
 	}))
 	defer srv.Close()
 
@@ -78,7 +90,7 @@ func TestCreateTXT_APIError(t *testing.T) {
 			ErrorText: "Bad username or password",
 		}
 		w.Header().Set("Content-Type", "application/json")
-		json.NewEncoder(w).Encode(resp)
+		_ = json.NewEncoder(w).Encode(resp)
 	}))
 	defer srv.Close()
 

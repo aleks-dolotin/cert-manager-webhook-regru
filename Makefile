@@ -4,10 +4,13 @@ COMMIT  ?= $(shell git rev-parse --short HEAD 2>/dev/null || echo unknown)
 BUILD_DATE ?= $(shell date -u +%Y-%m-%dT%H:%M:%SZ)
 LDFLAGS := -ldflags="-s -w -X main.Version=$(VERSION) -X main.Commit=$(COMMIT) -X main.BuildDate=$(BUILD_DATE)"
 
-.PHONY: build test lint docker-build bump-version
+.PHONY: build test lint docker-build bump-version test-smoke
 
 build:
 	go build $(LDFLAGS) -o bin/webhook ./cmd/webhook
+
+build-cli:
+	go build $(LDFLAGS) -o bin/regru-cli ./cmd/cli
 
 test:
 	go test ./... -v
@@ -19,6 +22,13 @@ lint:
 	golangci-lint run
 
 check: test test-race lint
+
+# Smoke test against real Reg.ru API.
+# Requires: REGRU_USERNAME, REGRU_PASSWORD, SMOKE_TEST_ZONE
+test-smoke:
+	@echo "Running smoke tests against real Reg.ru API..."
+	@echo "Required env: REGRU_USERNAME, REGRU_PASSWORD, SMOKE_TEST_ZONE"
+	go test -v -tags=smoke -count=1 -timeout=300s ./tests/smoke/...
 
 docker-build:
 	docker build -t $(IMAGE):$(VERSION) --build-arg VERSION=$(VERSION) .

@@ -5,6 +5,7 @@ package solver
 import (
 	"encoding/json"
 	"fmt"
+	"log"
 	"os"
 	"strings"
 
@@ -37,26 +38,34 @@ func (s *RegraSolver) Name() string {
 
 // Present creates a TXT record for the ACME DNS-01 challenge.
 func (s *RegraSolver) Present(ch *v1alpha1.ChallengeRequest) error {
+	log.Printf("[regru] Present called: ResolvedZone=%q ResolvedFQDN=%q Key=%q", ch.ResolvedZone, ch.ResolvedFQDN, ch.Key)
+
 	client, err := s.clientFromChallenge(ch)
 	if err != nil {
+		log.Printf("[regru] Present error getting client: %v", err)
 		return err
 	}
 
 	zone := extractZone(ch.ResolvedZone)
 	subdomain := extractSubdomain(ch.ResolvedFQDN, ch.ResolvedZone)
+	log.Printf("[regru] Present: zone=%q subdomain=%q", zone, subdomain)
 
 	return client.CreateTXT(zone, subdomain, ch.Key)
 }
 
 // CleanUp removes the TXT record after the challenge is completed.
 func (s *RegraSolver) CleanUp(ch *v1alpha1.ChallengeRequest) error {
+	log.Printf("[regru] CleanUp called: ResolvedZone=%q ResolvedFQDN=%q Key=%q", ch.ResolvedZone, ch.ResolvedFQDN, ch.Key)
+
 	client, err := s.clientFromChallenge(ch)
 	if err != nil {
+		log.Printf("[regru] CleanUp error getting client: %v", err)
 		return err
 	}
 
 	zone := extractZone(ch.ResolvedZone)
 	subdomain := extractSubdomain(ch.ResolvedFQDN, ch.ResolvedZone)
+	log.Printf("[regru] CleanUp: zone=%q subdomain=%q", zone, subdomain)
 
 	return client.DeleteTXT(zone, subdomain, ch.Key)
 }

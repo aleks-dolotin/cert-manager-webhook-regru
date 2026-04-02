@@ -58,37 +58,44 @@ type domainResult struct {
 
 // CreateTXT creates a TXT record in the given zone.
 func (c *Client) CreateTXT(zone, subdomain, content string) error {
-	params := url.Values{
-		"username":      {c.username},
-		"password":      {c.password},
-		"domains":       {fmt.Sprintf(`[{"dname":"%s"}]`, zone)},
-		"subdomain":     {subdomain},
-		"text":          {content},
-		"output_format": {"json"},
+	inputData := map[string]interface{}{
+		"username":  c.username,
+		"password":  c.password,
+		"domains":   []map[string]string{{"dname": zone}},
+		"subdomain": subdomain,
+		"text":      content,
 	}
 
-	return c.doRequest("/zone/add_txt", params)
+	return c.doRequest("/zone/add_txt", inputData)
 }
 
 // DeleteTXT removes a TXT record from the given zone.
 func (c *Client) DeleteTXT(zone, subdomain, content string) error {
-	params := url.Values{
-		"username":      {c.username},
-		"password":      {c.password},
-		"domains":       {fmt.Sprintf(`[{"dname":"%s"}]`, zone)},
-		"subdomain":     {subdomain},
-		"content":       {content},
-		"record_type":   {"TXT"},
-		"output_format": {"json"},
+	inputData := map[string]interface{}{
+		"username":    c.username,
+		"password":    c.password,
+		"domains":     []map[string]string{{"dname": zone}},
+		"subdomain":   subdomain,
+		"content":     content,
+		"record_type": "TXT",
 	}
 
-	return c.doRequest("/zone/remove_record", params)
+	return c.doRequest("/zone/remove_record", inputData)
 }
 
-func (c *Client) doRequest(endpoint string, params url.Values) error {
+func (c *Client) doRequest(endpoint string, inputData map[string]interface{}) error {
 	reqURL := c.baseURL + endpoint
 
-	resp, err := c.http.PostForm(reqURL, params)
+	jsonBytes, err := json.Marshal(inputData)
+	if err != nil {
+		return fmt.Errorf("regru: marshal input_data: %w", err)
+	}
+
+	form := url.Values{}
+	form.Set("input_format", "json")
+	form.Set("input_data", string(jsonBytes))
+
+	resp, err := c.http.PostForm(reqURL, form)
 	if err != nil {
 		return fmt.Errorf("regru: HTTP request failed: %w", err)
 	}
