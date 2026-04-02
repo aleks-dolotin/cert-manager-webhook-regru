@@ -4,7 +4,7 @@ groupName: acme.dolotin.ru
 
 image:
   repository: ghcr.io/aleks-dolotin/cert-manager-webhook-regru
-  tag: v0.2.0
+  tag: v0.3.0
   pullPolicy: IfNotPresent
 
 # Reg.ru credentials — passed from Keychain via --set or from existing Secret
