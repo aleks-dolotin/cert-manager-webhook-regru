@@ -1,0 +1,28 @@
+# Group name for the webhook API service.
+# Must match groupName in ClusterIssuer solver config.
+groupName: acme.dolotin.ru
+
+image:
+  repository: ghcr.io/aleks-dolotin/cert-manager-webhook-regru
+  tag: latest
+  pullPolicy: IfNotPresent
+
+# Reg.ru credentials — passed from Keychain via --set or from existing Secret
+regru:
+  # Create a Secret with credentials (set to false if using existing Secret)
+  createSecret: true
+  # Existing secret name (used when createSecret: false)
+  existingSecretName: regru-credentials
+  username: ""
+  password: ""
+
+resources:
+  requests:
+    cpu: 50m
+    memory: 64Mi
+  limits:
+    cpu: 200m
+    memory: 128Mi
+
+# cert-manager namespace (webhook must be in the same namespace)
+certManagerNamespace: cert-manager

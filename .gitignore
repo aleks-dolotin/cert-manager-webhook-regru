@@ -1,4 +1,15 @@
+# Binaries
+bin/
+*.exe
+
+# Go
+vendor/
+coverage.out
+
+# IDE
 .idea/
-*.ipr
-*.iws
-**/*.iml
+*.iml
+
+# OS
+.DS_Store
+/CLAUDE.md

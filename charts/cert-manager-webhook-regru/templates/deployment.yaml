@@ -1,0 +1,66 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "webhook.fullname" . }}
+  namespace: {{ .Values.certManagerNamespace }}
+  labels:
+    {{- include "webhook.labels" . | nindent 4 }}
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: {{ include "webhook.fullname" . }}
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: {{ include "webhook.fullname" . }}
+    spec:
+      serviceAccountName: {{ include "webhook.fullname" . }}
+      containers:
+        - name: webhook
+          image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}"
+          imagePullPolicy: {{ .Values.image.pullPolicy }}
+          args:
+            - --tls-cert-file=/tls/tls.crt
+            - --tls-private-key-file=/tls/tls.key
+            - --secure-port=8443
+          env:
+            - name: GROUP_NAME
+              value: {{ .Values.groupName | quote }}
+            - name: REGRU_USERNAME
+              valueFrom:
+                secretKeyRef:
+                  name: {{ if .Values.regru.createSecret }}{{ include "webhook.fullname" . }}-credentials{{ else }}{{ .Values.regru.existingSecretName }}{{ end }}
+                  key: username
+            - name: REGRU_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: {{ if .Values.regru.createSecret }}{{ include "webhook.fullname" . }}-credentials{{ else }}{{ .Values.regru.existingSecretName }}{{ end }}
+                  key: password
+          ports:
+            - name: https
+              containerPort: 8443
+          livenessProbe:
+            httpGet:
+              path: /healthz
+              port: https
+              scheme: HTTPS
+            initialDelaySeconds: 5
+            periodSeconds: 10
+          readinessProbe:
+            httpGet:
+              path: /healthz
+              port: https
+              scheme: HTTPS
+            initialDelaySeconds: 5
+            periodSeconds: 10
+          volumeMounts:
+            - name: tls
+              mountPath: /tls
+              readOnly: true
+          resources:
+{{ toYaml .Values.resources | indent 12 }}
+      volumes:
+        - name: tls
+          secret:
+            secretName: {{ include "webhook.servingCertificate" . }}
